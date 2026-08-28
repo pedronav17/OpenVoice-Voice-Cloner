@@ -167,7 +167,6 @@ def select_language():
         "3": ("FR", "French"),
         "4": ("ZH", "Chinese"),
         "5": ("JP", "Japanese"),
-        "6": ("KR", "Korean"),
     }
 
     print()

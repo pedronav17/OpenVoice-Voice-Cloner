@@ -48,7 +48,7 @@ device = "cpu"
 
 reference_speaker = os.path.join(
     RESOURCES_DIR,
-    "voz_frank.mp3"
+    "example_reference.mp3"
 )
 
 source_se_path = os.path.join(
