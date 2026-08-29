@@ -1,21 +1,14 @@
 import os
 import gradio as gr
 
-from app import (
-    clone_voice,
-    get_reference_files,
-    RESOURCES_DIR,
-    OUTPUT_DIR,
-    DEVICE,
-)
+from app import clone_voice, get_reference_files, RESOURCES_DIR
 
 
 # ============================================================
 # CONFIGURACIÓN
 # ============================================================
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
+APP_TITLE = "OpenVoice Voice Cloner"
 
 LANGUAGES = {
     "English": "EN",
@@ -27,294 +20,390 @@ LANGUAGES = {
 
 
 # ============================================================
-# FUNCIONES DE LA INTERFAZ
+# FUNCIONES
 # ============================================================
 
 def get_audio_choices():
     """
-    Obtiene los archivos de audio disponibles en resources/.
+    Get the available audio files from resources/.
     """
 
-    try:
-        files = get_reference_files()
+    files = get_reference_files()
 
-        return files
-
-    except Exception:
-        return []
+    return files
 
 
 def generate_voice(
-    reference_audio,
+    uploaded_audio,
+    selected_audio,
     language_name,
     text,
     speed,
 ):
     """
-    Ejecuta el motor de clonación definido en app.py.
+    Run the app.py cloning engine.
     """
 
-    # --------------------------------------------------------
-    # Validar audio
-    # --------------------------------------------------------
-
-    if not reference_audio:
-        raise gr.Error(
-            "Selecciona un archivo de audio de referencia."
-        )
-
-    # --------------------------------------------------------
-    # Resolver ruta del audio
-    # --------------------------------------------------------
-
-    # Gradio puede devolver una ruta absoluta cuando el usuario
-    # sube un archivo desde la interfaz.
-
-    if os.path.isfile(reference_audio):
-
-        audio_path = reference_audio
-
-    else:
-
-        audio_path = os.path.join(
-            RESOURCES_DIR,
-            reference_audio
-        )
-
-    if not os.path.isfile(audio_path):
-
-        raise gr.Error(
-            f"No se encontró el archivo de audio:\n{audio_path}"
-        )
-
-    # --------------------------------------------------------
-    # Validar idioma
-    # --------------------------------------------------------
-
-    if language_name not in LANGUAGES:
-
-        raise gr.Error(
-            "Selecciona un idioma válido."
-        )
-
-    language = LANGUAGES[language_name]
-
-    # --------------------------------------------------------
-    # Validar texto
-    # --------------------------------------------------------
-
-    if not text or not text.strip():
-
-        raise gr.Error(
-            "Introduce el texto que quieres convertir."
-        )
-
-    # --------------------------------------------------------
-    # Validar velocidad
-    # --------------------------------------------------------
-
     try:
+
+        # ----------------------------------------------------
+        # Determinar audio de referencia
+        # ----------------------------------------------------
+
+        reference_audio = None
+
+        # Si el usuario subió un archivo, tiene prioridad.
+        if uploaded_audio:
+
+            reference_audio = uploaded_audio
+
+        # Si no subió archivo, utilizar el seleccionado.
+        elif selected_audio:
+
+            reference_audio = os.path.join(
+                RESOURCES_DIR,
+                selected_audio
+            )
+
+        else:
+
+            raise ValueError(
+                "Select a reference audio file or upload a new one."
+            )
+
+        # ----------------------------------------------------
+        # Validar texto
+        # ----------------------------------------------------
+
+        if not text or not text.strip():
+
+            raise ValueError(
+                "Enter the text you want to convert to speech."
+            )
+
+        # ----------------------------------------------------
+        # Idioma
+        # ----------------------------------------------------
+
+        language = LANGUAGES.get(language_name)
+
+        if not language:
+
+            raise ValueError(
+                "Please select a valid language."
+            )
+
+        # ----------------------------------------------------
+        # Velocidad
+        # ----------------------------------------------------
 
         speed = float(speed)
 
-    except (TypeError, ValueError):
+        if speed <= 0:
 
-        raise gr.Error(
-            "La velocidad debe ser un número válido."
-        )
+            raise ValueError(
+                "The speed must be greater than 0."
+            )
 
-    if speed <= 0:
+        # ----------------------------------------------------
+        # Generar nombre de salida
+        # ----------------------------------------------------
 
-        raise gr.Error(
-            "La velocidad debe ser mayor que 0."
-        )
+        output_filename = "voice_cloned.wav"
 
-    # --------------------------------------------------------
-    # Generar nombre de salida
-    # --------------------------------------------------------
-
-    output_filename = "voice_cloned.wav"
-
-    # --------------------------------------------------------
-    # Ejecutar OpenVoice + MeloTTS
-    # --------------------------------------------------------
-
-    try:
+        # ----------------------------------------------------
+        # Ejecutar motor
+        # ----------------------------------------------------
 
         output_audio = clone_voice(
-            reference_speaker=audio_path,
+            reference_speaker=reference_audio,
             language=language,
             text=text,
             speed=speed,
             output_filename=output_filename,
         )
 
-    except Exception as error:
-
-        print()
-        print("=" * 60)
-        print("ERROR DURANTE LA GENERACIÓN")
-        print("=" * 60)
-        print(error)
-        print()
-
-        raise gr.Error(
-            f"Error durante la generación:\n{error}"
+        return (
+            output_audio,
+            f"✓ Generation completed successfully.\n\n"
+            f"Archivo: {os.path.basename(output_audio)}"
         )
 
-    # --------------------------------------------------------
-    # Resultado
-    # --------------------------------------------------------
+    except Exception as e:
 
-    if not os.path.isfile(output_audio):
-
-        raise gr.Error(
-            "La generación terminó, pero no se encontró "
-            "el archivo de audio resultante."
+        return (
+            None,
+            f"❌ Error:\n\n{str(e)}"
         )
-
-    return output_audio
 
 
 def refresh_audio_list():
     """
-    Actualiza la lista de audios disponibles en resources/.
+    Update the list of available audio files.
     """
 
-    files = get_audio_choices()
-
     return gr.update(
-        choices=files,
-        value=files[0] if files else None
+        choices=get_audio_choices()
     )
 
 
 # ============================================================
-# INTERFAZ GRADIO
+# CSS
+# ============================================================
+
+CUSTOM_CSS = """
+body {
+    background: #f5f6f8;
+}
+
+.gradio-container {
+    max-width: 1180px !important;
+    margin: 0 auto !important;
+    padding: 25px 20px 40px !important;
+}
+
+#main-header {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+#main-header h1 {
+    font-size: 34px;
+    margin-bottom: 6px;
+    font-weight: 700;
+}
+
+#main-header p {
+    font-size: 15px;
+    color: #6b7280;
+    margin-top: 0;
+}
+
+.card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 22px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    font-size: 19px;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.section-description {
+    color: #6b7280;
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+#generate-button {
+    margin-top: 12px;
+}
+
+#result-box {
+    min-height: 130px;
+}
+
+footer {
+    display: none !important;
+}
+"""
+
+
+# ============================================================
+# INTERFAZ
 # ============================================================
 
 with gr.Blocks(
-    title="OpenVoice Voice Cloner"
+    title=APP_TITLE,
+    css=CUSTOM_CSS,
+    theme=gr.themes.Soft(),
 ) as interface:
 
     # --------------------------------------------------------
-    # ENCABEZADO
+    # CABECERA
     # --------------------------------------------------------
 
-    gr.Markdown(
+    gr.HTML(
         """
-# 🎙️ OpenVoice Voice Cloner
-
-Genera voz utilizando **MeloTTS + OpenVoice V2**.
-
-Selecciona un audio de referencia, elige el idioma,
-introduce el texto y genera el audio con la voz clonada.
-"""
+        <div id="main-header">
+            <h1>🎙️ OpenVoice Voice Cloner</h1>
+            <p>
+                Voice cloning and text-to-speech powered by
+                OpenVoice V2 and MeloTTS
+            </p>
+        </div>
+        """
     )
 
     # --------------------------------------------------------
-    # INFORMACIÓN DEL SISTEMA
+    # FILA PRINCIPAL
     # --------------------------------------------------------
 
-    gr.Markdown(
-        f"""
-**Dispositivo:** `{DEVICE}`
+    with gr.Row(equal_height=False):
 
-Los modelos se ejecutan localmente en este ordenador.
-"""
-    )
+        # ====================================================
+        # COLUMNA IZQUIERDA
+        # ====================================================
 
-    # --------------------------------------------------------
-    # AUDIO DE REFERENCIA
-    # --------------------------------------------------------
+        with gr.Column(scale=1):
 
-    gr.Markdown("## 1. Audio de referencia")
+            with gr.Group(elem_classes="card"):
 
-    with gr.Row():
+                gr.HTML(
+                    """
+                    <div class="section-title">
+                        🎤 Reference Voice
+                    </div>
 
-        with gr.Column():
+                    <div class="section-description">
+                        Select an existing reference audio or
+                        upload a new recording.
+                    </div>
+                    """
+                )
 
-            audio_files = get_audio_choices()
+                selected_audio = gr.Dropdown(
+                    choices=get_audio_choices(),
+                    label="Audio available",
+                    info="Files stored in resources/",
+                    allow_custom_value=False,
+                )
 
-            reference_audio = gr.Dropdown(
-                choices=audio_files,
-                value=audio_files[0] if audio_files else None,
-                label="Selecciona un audio de resources/",
-                info="Formatos compatibles: MP3, WAV, M4A y FLAC",
-            )
+                refresh_button = gr.Button(
+                    "↻ Refresh audio list",
+                    size="sm",
+                )
 
-            refresh_button = gr.Button(
-                "🔄 Actualizar lista"
-            )
+                gr.Markdown(
+                    "or",
+                    elem_classes="section-description"
+                )
 
-        with gr.Column():
+                uploaded_audio = gr.Audio(
+                    label="Upload reference audio",
+                    type="filepath",
+                    sources=["upload", "microphone"],
+                )
 
-            uploaded_audio = gr.Audio(
-                label="O subir un audio",
-                type="filepath",
-                sources=["upload"],
-            )
+        # ====================================================
+        # COLUMNA DERECHA
+        # ====================================================
 
-    # --------------------------------------------------------
-    # IDIOMA
-    # --------------------------------------------------------
+        with gr.Column(scale=1):
 
-    gr.Markdown("## 2. Idioma")
+            with gr.Group(elem_classes="card"):
 
-    language = gr.Dropdown(
-        choices=list(LANGUAGES.keys()),
-        value="Spanish",
-        label="Idioma",
-    )
+                gr.HTML(
+                    """
+                    <div class="section-title">
+                        ⚙️ Voice Settings
+                    </div>
+
+                    <div class="section-description">
+                        Configure the language and speaking speed.
+                    </div>
+                    """
+                )
+
+                language = gr.Dropdown(
+                    choices=list(LANGUAGES.keys()),
+                    value="English",
+                    label="Language",
+                )
+
+                speed = gr.Slider(
+                    minimum=0.5,
+                    maximum=2.0,
+                    value=1.0,
+                    step=0.05,
+                    label="Speech speed",
+                    info="1.0 = normal speed",
+                )
 
     # --------------------------------------------------------
     # TEXTO
     # --------------------------------------------------------
 
-    gr.Markdown("## 3. Texto")
+    with gr.Group(elem_classes="card"):
 
-    text = gr.Textbox(
-        label="Texto que quieres convertir en voz",
-        placeholder=(
-            "Escribe aquí el texto que quieres convertir..."
-        ),
-        lines=8,
-    )
+        gr.HTML(
+            """
+            <div class="section-title">
+                📝 Text to Speech
+            </div>
 
-    # --------------------------------------------------------
-    # VELOCIDAD
-    # --------------------------------------------------------
+            <div class="section-description">
+                Enter the text that will be generated using
+                the cloned voice.
+            </div>
+            """
+        )
 
-    gr.Markdown("## 4. Velocidad")
+        text = gr.Textbox(
+            label="Text",
+            placeholder=(
+                "Write the text you want to convert into speech..."
+            ),
+            lines=8,
+            max_lines=15,
+        )
 
-    speed = gr.Slider(
-        minimum=0.5,
-        maximum=2.0,
-        value=1.0,
-        step=0.05,
-        label="Velocidad de la voz",
-        info="1.0 = velocidad normal",
-    )
-
-    # --------------------------------------------------------
-    # BOTÓN GENERAR
-    # --------------------------------------------------------
-
-    generate_button = gr.Button(
-        "🎙️ GENERAR VOZ CLONADA",
-        variant="primary",
-        size="lg",
-    )
+        generate_button = gr.Button(
+            "🎙️ Generate Cloned Voice",
+            variant="primary",
+            size="lg",
+            elem_id="generate-button",
+        )
 
     # --------------------------------------------------------
     # RESULTADO
     # --------------------------------------------------------
 
-    gr.Markdown("## 5. Resultado")
+    with gr.Group(elem_classes="card"):
 
-    output_audio = gr.Audio(
-        label="Voz clonada",
-        type="filepath",
+        gr.HTML(
+            """
+            <div class="section-title">
+                🔊 Generated Audio
+            </div>
+
+            <div class="section-description">
+                Your cloned voice will appear here after generation.
+            </div>
+            """
+        )
+
+        output_audio = gr.Audio(
+            label="Result",
+            type="filepath",
+            interactive=False,
+        )
+
+        result_message = gr.Textbox(
+            label="Status",
+            interactive=False,
+            lines=4,
+            elem_id="result-box",
+        )
+
+    # --------------------------------------------------------
+    # INFORMACIÓN
+    # --------------------------------------------------------
+
+    gr.Markdown(
+        """
+        ---
+        
+        **OpenVoice V2** · MeloTTS · PyTorch
+
+        The application runs locally on your computer.
+
+        www.soumyonline.com.
+        """
     )
 
     # --------------------------------------------------------
@@ -324,24 +413,23 @@ Los modelos se ejecutan localmente en este ordenador.
     refresh_button.click(
         fn=refresh_audio_list,
         inputs=None,
-        outputs=reference_audio,
+        outputs=selected_audio,
     )
-
-    # --------------------------------------------------------
-    # Generación utilizando audio de resources/
-    # --------------------------------------------------------
 
     generate_button.click(
         fn=generate_voice,
         inputs=[
-            reference_audio,
+            uploaded_audio,
+            selected_audio,
             language,
             text,
             speed,
         ],
-        outputs=output_audio,
+        outputs=[
+            output_audio,
+            result_message,
+        ],
     )
-
 
 
 # ============================================================
@@ -350,19 +438,8 @@ Los modelos se ejecutan localmente en este ordenador.
 
 if __name__ == "__main__":
 
-    print()
-    print("=" * 60)
-    print("        OPENVOICE VOICE CLONER - WEB INTERFACE")
-    print("=" * 60)
-    print()
-    print(f"Device: {DEVICE}")
-    print()
-    print("Iniciando servidor Gradio...")
-    print()
-    
     interface.launch(
         server_name="127.0.0.1",
         server_port=7860,
         inbrowser=True,
     )
-

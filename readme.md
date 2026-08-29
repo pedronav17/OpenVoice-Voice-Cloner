@@ -2,7 +2,7 @@
 
 A Python-based voice cloning application built with **OpenVoice V2** and **MeloTTS**.
 
-The application generates speech from text using a reference voice and applies voice conversion using OpenVoice V2. It supports multiple languages through a simple command-line interface.
+The application generates speech from text using a reference voice and applies voice conversion using OpenVoice V2. It supports multiple languages through both a command-line interface and a web-based interface.
 
 The current version is designed to run on **CPU**, so a dedicated NVIDIA GPU is not required.
 
@@ -20,8 +20,10 @@ The current version is designed to run on **CPU**, so a dedicated NVIDIA GPU is 
 * Voice reference extraction from an audio file
 * Adjustable speech speed
 * Interactive command-line interface
+* Simple web-based graphical interface
 * CPU execution
 * Automatic creation of the output directory
+* Automatic OpenVoice V2 checkpoint detection and download
 * Original OpenVoice demonstration resources included
 
 ## Supported Languages
@@ -156,7 +158,7 @@ C:\ffmpeg\bin\ffmpeg.exe
 
 > **Important:** If `ffmpeg.exe` exists in `C:\ffmpeg\bin` but PowerShell does not recognize the `ffmpeg` command, restart PowerShell after modifying the PATH. Existing terminal windows do not automatically receive changes made to the system PATH.
 
-### Hardware
+## Hardware
 
 A dedicated NVIDIA GPU is **not required**.
 
@@ -234,7 +236,7 @@ python -m pip install --upgrade pip
 Install the pinned dependencies:
 
 ```powershell
-python -m pip install -r requirements-full.txt
+python -m pip install -r requirements-windows.txt
 ```
 
 The project uses fixed package versions in order to reproduce the tested environment as closely as possible.
@@ -309,7 +311,7 @@ The application currently searches for:
 
 These extensions are supported by the current file-selection code. They have not necessarily been individually tested with every possible audio encoding.
 
-## Running the Application
+## Running the Command-Line Application
 
 Make sure the virtual environment is activated:
 
@@ -359,7 +361,8 @@ Device : cpu
 It then displays the available reference files:
 
 ```text
-Archivos de referencia disponibles:
+Reference files available:
+
 --------------------------------------------------
 
 1. example_reference.mp3
@@ -369,15 +372,16 @@ Archivos de referencia disponibles:
 After selecting the reference audio, the available languages are:
 
 ```text
-Idiomas disponibles:
+Available languages:
+
 --------------------------------------------------
+
 1. English
 2. Spanish
 3. French
 4. Chinese
 5. Japanese
 ```
-
 ## Speech Speed
 
 The application allows the speech speed to be adjusted.
@@ -418,6 +422,55 @@ outputs/tmp.wav
 ```
 
 The `outputs/` directory is excluded from version control because generated audio files are local results and should not be committed to Git.
+
+## Running the Web Interface
+
+The project also includes a simple graphical web interface built with **Gradio**.
+
+The web interface provides a more intuitive way to use the voice cloning application without interacting directly with the command line.
+
+Make sure the virtual environment is activated:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+Then run:
+
+```powershell
+python interface_app.py
+```
+
+The application starts a local web server and should automatically open the interface in your default web browser.
+
+If the browser does not open automatically, copy the local URL displayed in the PowerShell terminal and paste it into your browser.
+
+The interface is available at:
+
+```text
+http://127.0.0.1:7860
+```
+
+### Web Interface
+
+The interface provides an intuitive way to:
+
+* Select a reference voice.
+* Choose the target language.
+* Enter the text to synthesize.
+* Adjust the speech speed.
+* Generate the cloned voice.
+* Access the resulting audio.
+
+![OpenVoice Voice Cloner Web Interface](interface.png)
+
+The web interface is designed to make the application easier to use without requiring command-line interaction.
+
+### Video Demonstration
+
+A video demonstrating the installation and use of the OpenVoice Voice Cloner will be added here.
+
+**Video:** [Coming soon]
 
 ## Testing
 
@@ -465,11 +518,13 @@ The test also reports information about the generated WAV file and checks that t
 
 ```text
 OpenVoice-Voice-Cloner/
+
 │
 ├── app.py
+├── interface_app.py
 ├── test_clone.py
 ├── download_checkpoints.py
-├── requirements-full.txt
+├── requirements-windows.txt
 ├── .gitignore
 │
 ├── openvoice/
@@ -512,11 +567,17 @@ The primary tested configuration is:
 
 ```text
 Operating System: Windows
+
 Python: 3.9.x
+
 Device: CPU
+
 PyTorch: 1.13.1+cpu
+
 TorchAudio: 0.13.1
-NumPy: 1.22.0
+
+NumPy: 1.22.4
+
 Librosa: 0.9.1
 ```
 
@@ -546,21 +607,29 @@ These resources are included for demonstration and testing purposes.
 
 **Working prototype**
 
-The current version successfully performs:
+The current version successfully provides both command-line and web-based interfaces for the complete voice cloning pipeline:
 
 ```text
 Reference Audio
+
        │
        ▼
+
 Voice Feature Extraction
+
        │
        ▼
+
 MeloTTS Text-to-Speech
+
        │
        ▼
+
 OpenVoice V2 Voice Conversion
+
        │
        ▼
+
 Generated WAV Audio
 ```
 
@@ -574,8 +643,17 @@ Chinese
 Japanese
 ```
 
-The next stage of development is to improve the user interface and make the application easier to use without requiring command-line interaction.
+The current version includes:
 
+* Command-line interface
+* Web-based graphical interface
+* CPU execution
+* Automatic checkpoint detection
+* Multilingual voice generation
+* Voice reference selection
+* Adjustable speech speed
+
+Future development may focus on improving the graphical interface, performance, usability, and additional language support.
 
 ## Troubleshooting: UniDic / MeCab on Windows
 
@@ -585,9 +663,11 @@ If the application fails to start with an error similar to:
 Failed initializing MeCab
 
 default dictionary path:
+
 C:\OpenVoice-Voice-Cloner\.venv\lib\site-packages\unidic\dicdir
 
 [ifs] no such file or directory:
+
 C:\OpenVoice-Voice-Cloner\.venv\lib\site-packages\unidic\dicdir\mecabrc
 ```
 
@@ -649,4 +729,12 @@ python app.py
 
 ### Important
 
-`unidic` and `unidic-lite` are both listed in `requirements.txt`, but installing the Python packages alone does **not necessarily download the complete UniDic dictionary** required by MeCab. The dictionary download is therefore an additional setup step on Windows.
+`unidic` and `unidic-lite` are both listed in `requirements-windows.txt`, but installing the Python packages alone does **not necessarily download the complete UniDic dictionary** required by MeCab.
+
+The dictionary download is therefore an additional setup step that may be required on Windows.
+
+## License and Attribution
+
+This project uses components from the original OpenVoice project and MeloTTS.
+
+Please refer to the respective original repositories and their licenses for the applicable terms and conditions.

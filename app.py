@@ -64,10 +64,10 @@ def check_files():
 
         print()
         print("=" * 60)
-        print("MODELOS DE OPENVOICE V2 NO ENCONTRADOS")
+        print("OPENVOICE V2 MODELS NOT FOUND")
         print("=" * 60)
         print()
-        print("Se ejecutará la descarga automática.")
+        print("The automatic download will be performed.")
         print()
 
         download_script = os.path.join(
@@ -77,7 +77,7 @@ def check_files():
 
         if not os.path.isfile(download_script):
             raise FileNotFoundError(
-                "No se encontró download_checkpoints.py:\n"
+                "download_checkpoints.py was not found:\n"
                 f"{download_script}"
             )
 
@@ -88,8 +88,8 @@ def check_files():
 
         if result.returncode != 0:
             raise RuntimeError(
-                "La descarga de los modelos de OpenVoice V2 "
-                "no se completó correctamente."
+                "Downloading the OpenVoice V2 models"
+                "It was not completed correctly."
             )
 
     # --------------------------------------------------------
@@ -98,17 +98,17 @@ def check_files():
 
     if not os.path.isfile(checkpoint):
         raise FileNotFoundError(
-            "No se encontró el checkpoint de OpenVoice V2:\n"
+            "The OpenVoice V2 checkpoint was not found:\n"
             f"{checkpoint}"
         )
 
     if not os.path.isfile(config):
         raise FileNotFoundError(
-            "No se encontró config.json:\n"
+            "config.json was not found:\n"
             f"{config}"
         )
 
-    print("[OK] Modelos de OpenVoice V2 disponibles.")
+    print("[OK] Available OpenVoice V2 models.")
 
 
 def get_reference_files():
@@ -133,15 +133,15 @@ def get_reference_files():
 def select_reference_audio():
 
     print()
-    print("Archivos de referencia disponibles:")
+    print("Reference files available:")
     print("-" * 50)
 
     files = get_reference_files()
 
     if not files:
-        print("No se encontraron archivos de audio.")
+        print("No audio files were found.")
         raise FileNotFoundError(
-            "Coloca un archivo de audio en la carpeta resources."
+            "Place an audio file in the resources folder."
         )
 
     for index, filename in enumerate(files, start=1):
@@ -152,7 +152,7 @@ def select_reference_audio():
     while True:
 
         choice = input(
-            "Selecciona el número del audio de referencia: "
+            "Select the reference audio number: "
         ).strip()
 
         try:
@@ -167,7 +167,7 @@ def select_reference_audio():
         except ValueError:
             pass
 
-        print("Opción no válida. Inténtalo nuevamente.")
+        print("Invalid option. Please try again.")
 
 
 def select_language():
@@ -181,7 +181,7 @@ def select_language():
     }
 
     print()
-    print("Idiomas disponibles:")
+    print("Available languages:")
     print("-" * 50)
 
     for key, value in languages.items():
@@ -192,26 +192,26 @@ def select_language():
     while True:
 
         choice = input(
-            "Selecciona el idioma: "
+            "Select language:"
         ).strip()
 
         if choice in languages:
             return languages[choice]
 
-        print("Opción no válida. Inténtalo nuevamente.")
+        print("Invalid option. Please try again.")
 
 
 def get_speed():
 
     print()
-    print("Velocidad de la voz.")
-    print("Ejemplo: 1.0 = normal | 1.2 = más rápida")
+    print("Speech speed.")
+    print("Example: 1.0 = normal | 1.2 = faster | 0.9 = slower")
     print()
 
     while True:
 
         value = input(
-            "Velocidad [1.0]: "
+            "Speed [1.0]: "
         ).strip()
 
         if value == "":
@@ -226,14 +226,14 @@ def get_speed():
         except ValueError:
             pass
 
-        print("Introduce un número válido.")
+        print("Enter a valid number.")
 
 
 def get_text():
 
     print()
-    print("Introduce el texto que quieres convertir.")
-    print("Cuando termines, escribe una línea vacía.")
+    print("Enter the text you want to convert.")
+    print("When you're finished, press Enter twice")
     print("-" * 50)
 
     lines = []
@@ -249,7 +249,7 @@ def get_text():
 
     if not lines:
         raise ValueError(
-            "No se introdujo ningún texto."
+            "No text was entered."
         )
 
     return "\n".join(lines)
@@ -267,27 +267,27 @@ def clone_voice(
     output_filename="voice_cloned.wav",
 ):
     """
-    Genera una voz clonada utilizando MeloTTS + OpenVoice V2.
+    Generate a cloned voice using MeloTTS + OpenVoice V2.
 
-    Parámetros:
+    Parameters:
         reference_speaker:
-            Ruta al archivo de audio utilizado como referencia.
+            Path to the audio file used as a reference.
 
         language:
-            Código de idioma de MeloTTS:
+            MeloTTS language code:
             EN, ES, FR, ZH o JP.
 
         text:
-            Texto que será convertido en voz.
+            Text that will be converted into speech.
 
         speed:
-            Velocidad de generación.
+            Generation speed.
 
         output_filename:
-            Nombre del archivo WAV de salida.
+            Output WAV file name.
 
-    Retorna:
-        Ruta absoluta del archivo generado.
+    Return:
+        Absolute path of the generated file.
     """
 
     # --------------------------------------------------------
@@ -303,7 +303,7 @@ def clone_voice(
     if not os.path.isfile(reference_speaker):
 
         raise FileNotFoundError(
-            "No se encontró el audio de referencia:\n"
+            "Reference audio not found:\n"
             f"{reference_speaker}"
         )
 
@@ -314,7 +314,7 @@ def clone_voice(
     if not text or not text.strip():
 
         raise ValueError(
-            "No se introdujo ningún texto."
+            "No text was entered."
         )
 
     # --------------------------------------------------------
@@ -332,7 +332,7 @@ def clone_voice(
     if language not in valid_languages:
 
         raise ValueError(
-            f"Idioma no válido: {language}"
+            f"Invalid language: {language}"
         )
 
     # --------------------------------------------------------
@@ -346,13 +346,13 @@ def clone_voice(
     except (TypeError, ValueError):
 
         raise ValueError(
-            "La velocidad debe ser un número válido."
+            "The speed must be a valid number."
         )
 
     if speed <= 0:
 
         raise ValueError(
-            "La velocidad debe ser mayor que 0."
+            "The speed must be greater than 0."
         )
 
     # --------------------------------------------------------
@@ -360,7 +360,7 @@ def clone_voice(
     # --------------------------------------------------------
 
     print()
-    print("[1/4] Cargando OpenVoice V2...")
+    print("[1/4] Loading OpenVoice V2...")
 
     from openvoice import se_extractor
     from openvoice.api import ToneColorConverter
@@ -385,27 +385,27 @@ def clone_voice(
         device=DEVICE
     )
 
-    print("[OK] Configuración de OpenVoice cargada.")
+    print("[OK] OpenVoice configuration loaded.")
 
     # --------------------------------------------------------
     # Cargar checkpoint
     # --------------------------------------------------------
 
-    print("[INFO] Cargando checkpoint de OpenVoice V2...")
+    print("[INFO] Loading OpenVoice V2 checkpoint...")
 
     tone_color_converter.load_ckpt(
         checkpoint_path
     )
 
-    print("[OK] Checkpoint de OpenVoice V2 cargado.")
+    print("[OK] OpenVoice V2 checkpoint loaded.")
 
     # --------------------------------------------------------
     # Extraer voz de referencia
     # --------------------------------------------------------
 
     print()
-    print("[2/4] Analizando voz de referencia...")
-    print("Esto puede tardar unos segundos...")
+    print("[2/4] Analyzing reference voice...")
+    print("This may take a few seconds...")
 
     target_se, audio_name = se_extractor.get_se(
         reference_speaker,
@@ -413,7 +413,7 @@ def clone_voice(
         vad=False
     )
 
-    print("[OK] Voz de referencia procesada.")
+    print("[OK] Reference voice processed.")
     print(f"Audio: {audio_name}")
 
     # --------------------------------------------------------
@@ -421,7 +421,7 @@ def clone_voice(
     # --------------------------------------------------------
 
     print()
-    print("[3/4] Generando audio base con MeloTTS...")
+    print("[3/4] Generating backing track with MeloTTS...")
 
     model = TTS(
         language=language,
@@ -457,7 +457,7 @@ def clone_voice(
     if not os.path.isfile(source_se_path):
 
         raise FileNotFoundError(
-            "No se encontró el speaker embedding de MeloTTS:\n"
+            "MeloTTS speaker embedding not found:\n"
             f"{source_se_path}"
         )
 
@@ -466,7 +466,7 @@ def clone_voice(
         map_location=DEVICE
     )
 
-    print("[OK] Source SE cargado.")
+    print("[OK] Source SE loaded.")
 
     # --------------------------------------------------------
     # Generar audio base
@@ -489,15 +489,15 @@ def clone_voice(
         speed=speed
     )
 
-    print("[OK] Audio base generado.")
-    print(f"Archivo temporal: {temp_audio}")
+    print("[OK] Base audio generated.")
+    print(f"Temporary file: {temp_audio}")
 
     # --------------------------------------------------------
     # OpenVoice
     # --------------------------------------------------------
 
     print()
-    print("[4/4] Aplicando la voz clonada...")
+    print("[4/4] Applying the cloned voice...")
 
     output_audio = os.path.join(
         OUTPUT_DIR,
@@ -518,10 +518,10 @@ def clone_voice(
 
     print()
     print("=" * 60)
-    print("✓ GENERACIÓN COMPLETADA")
+    print("✓ GENERATION COMPLETED")
     print("=" * 60)
     print()
-    print("Archivo generado:")
+    print("File generated:")
     print(output_audio)
     print()
 
@@ -551,7 +551,7 @@ def main():
     reference_speaker = select_reference_audio()
 
     print()
-    print("Audio seleccionado:")
+    print("Selected audio:")
     print(reference_speaker)
 
     # --------------------------------------------------------
@@ -561,7 +561,7 @@ def main():
     language, language_name = select_language()
 
     print()
-    print(f"Idioma seleccionado: {language_name}")
+    print(f"Selected language: {language_name}")
 
     # --------------------------------------------------------
     # Texto
