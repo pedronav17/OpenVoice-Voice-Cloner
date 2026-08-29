@@ -1,4 +1,3 @@
-
 import os
 import sys
 import subprocess
@@ -112,13 +111,12 @@ def check_files():
     print("[OK] Modelos de OpenVoice V2 disponibles.")
 
 
-def select_reference_audio():
-
-    print()
-    print("Archivos de referencia disponibles:")
-    print("-" * 50)
+def get_reference_files():
 
     files = []
+
+    if not os.path.isdir(RESOURCES_DIR):
+        return files
 
     for filename in os.listdir(RESOURCES_DIR):
 
@@ -126,6 +124,19 @@ def select_reference_audio():
             (".mp3", ".wav", ".m4a", ".flac")
         ):
             files.append(filename)
+
+    files.sort()
+
+    return files
+
+
+def select_reference_audio():
+
+    print()
+    print("Archivos de referencia disponibles:")
+    print("-" * 50)
+
+    files = get_reference_files()
 
     if not files:
         print("No se encontraron archivos de audio.")
@@ -245,20 +256,39 @@ def get_text():
 
 
 # ============================================================
-# PROGRAMA PRINCIPAL
+# MOTOR DE CLONACIÓN
 # ============================================================
 
-def main():
+def clone_voice(
+    reference_speaker,
+    language,
+    text,
+    speed=1.0,
+    output_filename="voice_cloned.wav",
+):
+    """
+    Genera una voz clonada utilizando MeloTTS + OpenVoice V2.
 
-    print()
-    print("=" * 60)
-    print("             OPENVOICE VOICE CLONER")
-    print("=" * 60)
-    print()
+    Parámetros:
+        reference_speaker:
+            Ruta al archivo de audio utilizado como referencia.
 
-    print(f"Python : {sys.executable}")
-    print(f"PyTorch: {torch.__version__}")
-    print(f"Device : {DEVICE}")
+        language:
+            Código de idioma de MeloTTS:
+            EN, ES, FR, ZH o JP.
+
+        text:
+            Texto que será convertido en voz.
+
+        speed:
+            Velocidad de generación.
+
+        output_filename:
+            Nombre del archivo WAV de salida.
+
+    Retorna:
+        Ruta absoluta del archivo generado.
+    """
 
     # --------------------------------------------------------
     # Comprobar modelos
@@ -267,35 +297,63 @@ def main():
     check_files()
 
     # --------------------------------------------------------
-    # Seleccionar audio
+    # Comprobar audio de referencia
     # --------------------------------------------------------
 
-    reference_speaker = select_reference_audio()
+    if not os.path.isfile(reference_speaker):
 
-    print()
-    print("Audio seleccionado:")
-    print(reference_speaker)
-
-    # --------------------------------------------------------
-    # Seleccionar idioma
-    # --------------------------------------------------------
-
-    language, language_name = select_language()
-
-    print()
-    print(f"Idioma seleccionado: {language_name}")
+        raise FileNotFoundError(
+            "No se encontró el audio de referencia:\n"
+            f"{reference_speaker}"
+        )
 
     # --------------------------------------------------------
-    # Texto
+    # Comprobar texto
     # --------------------------------------------------------
 
-    text = get_text()
+    if not text or not text.strip():
+
+        raise ValueError(
+            "No se introdujo ningún texto."
+        )
 
     # --------------------------------------------------------
-    # Velocidad
+    # Validar idioma
     # --------------------------------------------------------
 
-    speed = get_speed()
+    valid_languages = {
+        "EN",
+        "ES",
+        "FR",
+        "ZH",
+        "JP",
+    }
+
+    if language not in valid_languages:
+
+        raise ValueError(
+            f"Idioma no válido: {language}"
+        )
+
+    # --------------------------------------------------------
+    # Validar velocidad
+    # --------------------------------------------------------
+
+    try:
+
+        speed = float(speed)
+
+    except (TypeError, ValueError):
+
+        raise ValueError(
+            "La velocidad debe ser un número válido."
+        )
+
+    if speed <= 0:
+
+        raise ValueError(
+            "La velocidad debe ser mayor que 0."
+        )
 
     # --------------------------------------------------------
     # Importar OpenVoice y MeloTTS
@@ -309,7 +367,7 @@ def main():
     from melo.api import TTS
 
     # --------------------------------------------------------
-    # Crear ToneColorConverter
+    # Configuración OpenVoice
     # --------------------------------------------------------
 
     config_path = os.path.join(
@@ -330,7 +388,7 @@ def main():
     print("[OK] Configuración de OpenVoice cargada.")
 
     # --------------------------------------------------------
-    # CARGAR CHECKPOINT
+    # Cargar checkpoint
     # --------------------------------------------------------
 
     print("[INFO] Cargando checkpoint de OpenVoice V2...")
@@ -443,7 +501,7 @@ def main():
 
     output_audio = os.path.join(
         OUTPUT_DIR,
-        "voice_cloned.wav"
+        output_filename
     )
 
     tone_color_converter.convert(
@@ -466,6 +524,68 @@ def main():
     print("Archivo generado:")
     print(output_audio)
     print()
+
+    return output_audio
+
+
+# ============================================================
+# PROGRAMA PRINCIPAL - TERMINAL
+# ============================================================
+
+def main():
+
+    print()
+    print("=" * 60)
+    print("             OPENVOICE VOICE CLONER")
+    print("=" * 60)
+    print()
+
+    print(f"Python : {sys.executable}")
+    print(f"PyTorch: {torch.__version__}")
+    print(f"Device : {DEVICE}")
+
+    # --------------------------------------------------------
+    # Seleccionar audio
+    # --------------------------------------------------------
+
+    reference_speaker = select_reference_audio()
+
+    print()
+    print("Audio seleccionado:")
+    print(reference_speaker)
+
+    # --------------------------------------------------------
+    # Seleccionar idioma
+    # --------------------------------------------------------
+
+    language, language_name = select_language()
+
+    print()
+    print(f"Idioma seleccionado: {language_name}")
+
+    # --------------------------------------------------------
+    # Texto
+    # --------------------------------------------------------
+
+    text = get_text()
+
+    # --------------------------------------------------------
+    # Velocidad
+    # --------------------------------------------------------
+
+    speed = get_speed()
+
+    # --------------------------------------------------------
+    # Generar
+    # --------------------------------------------------------
+
+    clone_voice(
+        reference_speaker=reference_speaker,
+        language=language,
+        text=text,
+        speed=speed,
+        output_filename="voice_cloned.wav",
+    )
 
 
 # ============================================================
