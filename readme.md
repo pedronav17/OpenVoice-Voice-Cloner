@@ -70,6 +70,17 @@ The command should return a Python 3.9.x version.
 
 If the `python` command is not recognized, Python is either not installed or is not correctly configured in the system PATH.
 
+### Install Git
+
+Git must be installed before installing the project dependencies because some Python packages are downloaded directly from Git repositories.
+
+After installing Git, verify the installation:
+
+git --version
+
+If the command returns the installed Git version, Git is correctly configured.
+
+
 ## Install FFmpeg (Windows)
 
 FFmpeg is required by OpenVoice and Pydub to process and convert audio files.
@@ -80,7 +91,7 @@ Download a Windows build of FFmpeg from:
 
 https://www.gyan.dev/ffmpeg/builds/
 
-Download the **full build** ZIP archive.
+Download the **8.x build** ZIP archive.
 
 ### 2. Extract FFmpeg
 
@@ -175,15 +186,26 @@ CPU processing can be significantly slower than compatible GPU execution.
 
 ## Installation
 
-### 1. Install Python
+### 1. PowerShell Execution Policy
 
-Before cloning or installing the project, install **Python 3.9.x** on your Windows computer.
+Windows PowerShell may prevent the virtual environment activation script from running because of the current execution policy.
 
-Verify the installation:
+Open PowerShell and run:
 
-```powershell
-python --version
-```
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+If PowerShell asks:
+
+Do you want to change the execution policy?
+[Y] Yes  [N] No  [?] Help
+
+Select:
+
+Y
+
+and press Enter.
+
+This changes the execution policy only for the current Windows user.
 
 ### 2. Clone the repository
 
@@ -205,6 +227,24 @@ Create a dedicated Python virtual environment:
 
 ```powershell
 python -m venv .venv
+```
+
+### 3.1 OpenAI Whisper
+
+During installation, openai-whisper==20231117 may require an alternative installation command on Windows.
+
+If the standard installation fails, use:
+
+```
+python -m pip install --no-build-isolation openai-whisper==20231117
+```
+
+### 3.2 PyTorch — CPU version
+
+For a CPU-only installation, install the compatible PyTorch version using:
+
+```
+python -m pip install torch==1.13.1+cpu --extra-index-url https://download.pytorch.org/whl/cpu
 ```
 
 ### 4. Activate the virtual environment
@@ -389,6 +429,7 @@ The application allows the speech speed to be adjusted.
 For example:
 
 ```text
+0.9 = slower
 1.0 = normal speed
 1.2 = faster
 ```
@@ -466,11 +507,11 @@ The interface provides an intuitive way to:
 
 The web interface is designed to make the application easier to use without requiring command-line interaction.
 
-### Video Demonstration
+## 🎥 Project Demo
 
-A video demonstrating the installation and use of the OpenVoice Voice Cloner will be added here.
+[![OpenVoice Voice Cloner - Project Demo](https://img.youtube.com/vi/0S_V-4zA4EQ/maxresdefault.jpg)](https://youtu.be/0S_V-4zA4EQ)
 
-**Video:** [Coming soon]
+**Watch the complete project demonstration on YouTube.**
 
 ## Testing
 
@@ -655,77 +696,78 @@ The current version includes:
 
 Future development may focus on improving the graphical interface, performance, usability, and additional language support.
 
-## Troubleshooting: UniDic / MeCab on Windows
+## Troubleshooting: 
 
-If the application fails to start with an error similar to:
+### MeCab error
 
-```text
-Failed initializing MeCab
+If you encounter an error related to:
 
-default dictionary path:
+mecabrc
 
-C:\OpenVoice-Voice-Cloner\.venv\lib\site-packages\unidic\dicdir
+or:
 
-[ifs] no such file or directory:
+No such file or directory
 
-C:\OpenVoice-Voice-Cloner\.venv\lib\site-packages\unidic\dicdir\mecabrc
+check that UniDic Lite is installed:
+
+pip show unidic-lite
+
+You can reinstall it with:
+
+```
+pip install --force-reinstall unidic-lite
 ```
 
-the UniDic dictionary has not been downloaded or installed correctly.
+### Gradio API error
 
-### Solution
+If Gradio produces an error similar to:
 
-Make sure the virtual environment is activated:
+TypeError: argument of type 'bool' is not iterable
 
-```powershell
-.\.venv\Scripts\Activate.ps1
+check the installed versions:
+
+```
+python -c "import gradio, gradio_client; print(gradio.__version__); print(gradio_client.__version__)"
 ```
 
-Then download the UniDic dictionary:
+The tested configuration is:
 
-```powershell
-python -m unidic download
+Gradio 4.44.1
+Gradio Client 1.3.0
+
+Also verify FastAPI, Starlette and Pydantic:
+
+```
+python -c "import fastapi, starlette, pydantic; print(fastapi.__version__); print(starlette.__version__); print(pydantic.__version__)"
 ```
 
-If the command fails on Windows with:
+## Verification
 
-```text
-ValueError: cannot find context for 'fork'
+Check the installed dependencies with:
+
+python -m pip check
+
+You can also verify the main environment:
+
+```
+python -c "import torch, gradio, fastapi, pydantic; print('Torch:', torch.__version__); print('Gradio:', gradio.__version__); print('FastAPI:', fastapi.__version__); print('Pydantic:', pydantic.__version__)"
 ```
 
-this is a Windows compatibility issue with the `plac` package used by UniDic's command-line tool.
+### Project Background
 
-In that case, run the download function directly:
+This project started from the open-source OpenVoice voice cloning technology and was adapted and configured specifically for a Windows environment.
 
-```powershell
-python -c "from unidic.download import download_version; download_version()"
-```
+The main focus of this project was not only implementing voice cloning, but also solving the dependency and compatibility challenges involved in running OpenVoice V2 and MeloTTS on Windows using CPU.
 
-After the download finishes, verify that the MeCab configuration file exists:
+Particular attention was given to:
 
-```powershell
-python -c "import unidic, os; print(unidic.DICDIR); print(os.path.exists(os.path.join(unidic.DICDIR, 'mecabrc')))"
-```
-
-The final result should be:
-
-```text
-True
-```
-
-If it returns `False`, the UniDic dictionary is still not installed correctly.
-
-Once `mecabrc` exists, test MeCab with:
-
-```powershell
-python -c "import MeCab; print('MeCab OK')"
-```
-
-Then run the application again:
-
-```powershell
-python app.py
-```
+Python environment reproducibility.
+CPU-based PyTorch configuration.
+MeloTTS integration.
+MeCab configuration.
+UniDic Lite integration.
+Gradio/FastAPI/Pydantic compatibility.
+Creating a simple user-facing voice cloning interface.
 
 ### Important
 
@@ -733,8 +775,20 @@ python app.py
 
 The dictionary download is therefore an additional setup step that may be required on Windows.
 
+## Disclaimer
+
+This project is intended for educational and demonstration purposes.
+
+Only use voice cloning technology with voices for which you have the appropriate permission or authorization.
+
 ## License and Attribution
 
-This project uses components from the original OpenVoice project and MeloTTS.
+This project is based on the open-source work by MyShell AI / OpenVoice and MeloTTS.
 
-Please refer to the respective original repositories and their licenses for the applicable terms and conditions.
+Original OpenVoice repository:
+
+https://github.com/myshell-ai/OpenVoice
+
+MeloTTS:
+
+https://github.com/myshell-ai/MeloTTS

@@ -5,7 +5,7 @@ import torch
 
 
 # ============================================================
-# CONFIGURACIÓN
+# CONFIGURATION
 # ============================================================
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -37,7 +37,37 @@ DEVICE = "cuda:0" if torch.cuda.is_available() else "cpu"
 
 
 # ============================================================
-# FUNCIONES AUXILIARES
+# WINDOWS / MECAB CONFIGURATION
+# ============================================================
+
+def configure_mecab():
+
+    import unidic_lite
+
+    dicdir = unidic_lite.DICDIR.replace("\\", "/")
+    mecabrc = os.path.join(
+        unidic_lite.DICDIR,
+        "mecabrc"
+    ).replace("\\", "/")
+
+    if not os.path.isfile(mecabrc):
+        raise FileNotFoundError(
+            "UniDic Lite mecabrc was not found:\n"
+            f"{mecabrc}"
+        )
+
+    # MeCab uses these environment variables when
+    # initializing the default Tagger.
+    os.environ["MECABRC"] = mecabrc
+    os.environ["MECAB_DICDIR"] = dicdir
+
+    print("[OK] MeCab configured with UniDic Lite.")
+
+
+configure_mecab()
+
+# ============================================================
+# HELPER FUNCTIONS
 # ============================================================
 
 def check_files():
@@ -53,8 +83,8 @@ def check_files():
     )
 
     # --------------------------------------------------------
-    # Si falta el checkpoint o la configuración,
-    # ejecutar automáticamente el descargador.
+    # If the checkpoint or configuration is missing,
+    # automatically run the downloader.
     # --------------------------------------------------------
 
     if (
@@ -88,12 +118,12 @@ def check_files():
 
         if result.returncode != 0:
             raise RuntimeError(
-                "Downloading the OpenVoice V2 models"
-                "It was not completed correctly."
+                "Downloading the OpenVoice V2 models "
+                "was not completed correctly."
             )
 
     # --------------------------------------------------------
-    # Comprobar nuevamente después de la descarga
+    # Check again after downloading
     # --------------------------------------------------------
 
     if not os.path.isfile(checkpoint):
@@ -192,7 +222,7 @@ def select_language():
     while True:
 
         choice = input(
-            "Select language:"
+            "Select language: "
         ).strip()
 
         if choice in languages:
@@ -256,7 +286,7 @@ def get_text():
 
 
 # ============================================================
-# MOTOR DE CLONACIÓN
+# VOICE CLONING ENGINE
 # ============================================================
 
 def clone_voice(
@@ -275,7 +305,7 @@ def clone_voice(
 
         language:
             MeloTTS language code:
-            EN, ES, FR, ZH o JP.
+            EN, ES, FR, ZH or JP.
 
         text:
             Text that will be converted into speech.
@@ -286,18 +316,18 @@ def clone_voice(
         output_filename:
             Output WAV file name.
 
-    Return:
+    Returns:
         Absolute path of the generated file.
     """
 
     # --------------------------------------------------------
-    # Comprobar modelos
+    # Check models
     # --------------------------------------------------------
 
     check_files()
 
     # --------------------------------------------------------
-    # Comprobar audio de referencia
+    # Check reference audio
     # --------------------------------------------------------
 
     if not os.path.isfile(reference_speaker):
@@ -308,7 +338,7 @@ def clone_voice(
         )
 
     # --------------------------------------------------------
-    # Comprobar texto
+    # Check text
     # --------------------------------------------------------
 
     if not text or not text.strip():
@@ -318,7 +348,7 @@ def clone_voice(
         )
 
     # --------------------------------------------------------
-    # Validar idioma
+    # Validate language
     # --------------------------------------------------------
 
     valid_languages = {
@@ -336,7 +366,7 @@ def clone_voice(
         )
 
     # --------------------------------------------------------
-    # Validar velocidad
+    # Validate speed
     # --------------------------------------------------------
 
     try:
@@ -356,7 +386,7 @@ def clone_voice(
         )
 
     # --------------------------------------------------------
-    # Importar OpenVoice y MeloTTS
+    # Import OpenVoice and MeloTTS
     # --------------------------------------------------------
 
     print()
@@ -367,7 +397,7 @@ def clone_voice(
     from melo.api import TTS
 
     # --------------------------------------------------------
-    # Configuración OpenVoice
+    # OpenVoice configuration
     # --------------------------------------------------------
 
     config_path = os.path.join(
@@ -388,7 +418,7 @@ def clone_voice(
     print("[OK] OpenVoice configuration loaded.")
 
     # --------------------------------------------------------
-    # Cargar checkpoint
+    # Load checkpoint
     # --------------------------------------------------------
 
     print("[INFO] Loading OpenVoice V2 checkpoint...")
@@ -400,7 +430,7 @@ def clone_voice(
     print("[OK] OpenVoice V2 checkpoint loaded.")
 
     # --------------------------------------------------------
-    # Extraer voz de referencia
+    # Extract reference voice
     # --------------------------------------------------------
 
     print()
@@ -430,10 +460,10 @@ def clone_voice(
 
     speaker_ids = model.hps.data.spk2id
 
-    print(f"Speakers MeloTTS: {speaker_ids}")
+    print(f"MeloTTS speakers: {speaker_ids}")
 
     # --------------------------------------------------------
-    # Seleccionar speaker
+    # Select speaker
     # --------------------------------------------------------
 
     speaker_key = list(speaker_ids.keys())[0]
@@ -469,7 +499,7 @@ def clone_voice(
     print("[OK] Source SE loaded.")
 
     # --------------------------------------------------------
-    # Generar audio base
+    # Generate base audio
     # --------------------------------------------------------
 
     os.makedirs(
@@ -513,12 +543,12 @@ def clone_voice(
     )
 
     # --------------------------------------------------------
-    # Resultado
+    # Result
     # --------------------------------------------------------
 
     print()
     print("=" * 60)
-    print("✓ GENERATION COMPLETED")
+    print("GENERATION COMPLETED")
     print("=" * 60)
     print()
     print("File generated:")
@@ -529,7 +559,7 @@ def clone_voice(
 
 
 # ============================================================
-# PROGRAMA PRINCIPAL - TERMINAL
+# MAIN PROGRAM - TERMINAL
 # ============================================================
 
 def main():
@@ -545,7 +575,7 @@ def main():
     print(f"Device : {DEVICE}")
 
     # --------------------------------------------------------
-    # Seleccionar audio
+    # Select audio
     # --------------------------------------------------------
 
     reference_speaker = select_reference_audio()
@@ -555,7 +585,7 @@ def main():
     print(reference_speaker)
 
     # --------------------------------------------------------
-    # Seleccionar idioma
+    # Select language
     # --------------------------------------------------------
 
     language, language_name = select_language()
@@ -564,19 +594,19 @@ def main():
     print(f"Selected language: {language_name}")
 
     # --------------------------------------------------------
-    # Texto
+    # Text
     # --------------------------------------------------------
 
     text = get_text()
 
     # --------------------------------------------------------
-    # Velocidad
+    # Speed
     # --------------------------------------------------------
 
     speed = get_speed()
 
     # --------------------------------------------------------
-    # Generar
+    # Generate
     # --------------------------------------------------------
 
     clone_voice(
@@ -589,9 +619,8 @@ def main():
 
 
 # ============================================================
-# EJECUCIÓN
+# EXECUTION
 # ============================================================
 
 if __name__ == "__main__":
     main()
-
